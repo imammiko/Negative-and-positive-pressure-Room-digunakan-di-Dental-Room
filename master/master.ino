@@ -42,14 +42,13 @@ void setup() {
   // put your setup code here, to run once:
 Serial.begin(9600);
   Serial.println(F("master"));
- 
+ nrfConfig();
  bmpConfig();
 }
 
 void loop() {
  //Serial.print( bmpPressure());
 //Serial.println();
-int a=0;
 network.update();                  // Check the network regularly
 
   // ======reciving
@@ -57,22 +56,22 @@ network.update();                  // Check the network regularly
     
     RF24NetworkHeader header;        // If so, grab it and print it out
     data dataTerima;
-    network.read(header,&a,sizeof(a));
+    network.read(header,&dataTerima,sizeof(dataTerima));
     Serial.print("1");
     Serial.print("Received packet #");
-    Serial.print(a);
-//    Serial.print(" at ");
-//    Serial.println(dataTerima.pressureDalam);
+    Serial.print(dataTerima.pressureLuar);
+    Serial.print(" at ");
+    Serial.println(dataTerima.pressureDalam);
   }
 //======
 
 //=======ngirim 
-//    data dataKirim = {1 ,2,3,4,5,6,1,1,1};
-//    RF24NetworkHeader header1(/*to node*/ nodeSensor);
-//    bool ok = network.write(header1,&dataKirim,sizeof(dataKirim));
-//     if (ok)
-//      Serial.println("ok.");
-//    else
-//      Serial.println("failed.");
-////==========  
+    data dataKirim = {1 ,2,3,4,5,6,1,1,1};
+    RF24NetworkHeader header1(/*to node*/ nodeSensor);
+    bool ok = network.write(header1,&dataKirim,sizeof(dataKirim));
+     if (ok)
+      Serial.println("ok.");
+    else
+      Serial.println("failed.");
+//==========  
 }

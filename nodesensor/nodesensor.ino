@@ -42,7 +42,7 @@ void setup() {
   // put your setup code here, to run once:
 Serial.begin(9600);
   Serial.println(F("nodesensort"));
- 
+ nrfConfig();
  bmpConfig();
 }
 
@@ -51,25 +51,24 @@ void loop() {
 //Serial.println();
 network.update();                  // Check the network regularly
 
-//  // ======reciving
-//  while ( network.available() ) {     // Is there anything ready for us?
-//    
-//    RF24NetworkHeader header;        // If so, grab it and print it out
-//    data dataTerima;
-//    network.read(header,&dataTerima,sizeof(dataTerima));
-//    Serial.print("1");
-//    Serial.print("Received packet #");
-//    Serial.print(dataTerima.pressureLuar);
-//    Serial.print(" at ");
-//    Serial.println(dataTerima.pressureDalam);
-//  }
-////======
+  // ======reciving
+  while ( network.available() ) {     // Is there anything ready for us?
+    
+    RF24NetworkHeader header;        // If so, grab it and print it out
+    data dataTerima;
+    network.read(header,&dataTerima,sizeof(dataTerima));
+    
+    Serial.print("Received packet #");
+    Serial.print(dataTerima.pressureLuar);
+    Serial.print(" at ");
+    Serial.println(dataTerima.pressureDalam);
+  }
+//======
 
 //=======ngirim 
-int a=23;
     data dataKirim = {1 ,2,3,4,5,6,1,1,1};
     RF24NetworkHeader header1(/*to node*/ master);
-    bool ok = network.write(header1,&a,sizeof(a));
+    bool ok = network.write(header1,&dataKirim,sizeof(dataKirim));
      if (ok)
       Serial.println("ok.");
     else
