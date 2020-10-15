@@ -1,20 +1,28 @@
 class NrfKom: public RF24 {
   public:
-    NrfKom(int pipe[2], int pin1, int pin2);
-     void deklarasi();
+    NrfKom(int pipe[2], int pin1, int pin2,String channel);
+    void deklarasi();
     void mengirim(String data);
     void menerima();
     int lihat();
+    void pemisah(String data);
+    String segment(String objek, String data);
+    void merakit();
+    //=========================
     int _pipes[2];
     byte counter = 1;
-  private:
+    String channel="";
+    
 
+  private:
+    String dataObjek[5] = {"/rd", "/mode", "/data", "/asal", "/channel"};
 };
 
 
 
-NrfKom::NrfKom(int pipe[2], int pin1, int pin2): RF24(pin1, pin2) {
+NrfKom::NrfKom(int pipe[2], int pin1, int pin2,String channel): RF24(pin1, pin2) {
   memcpy (this->_pipes, pipe,  sizeof(int) * 2);
+  this->channel=channel;
   // Serial.println(_pipes[0] );
 }
 int NrfKom::lihat() {
@@ -24,56 +32,58 @@ int NrfKom::lihat() {
 void NrfKom::deklarasi() {
 
   this->begin();
-  this->setAutoAck(1);                    // Ensure autoACK is enabled
-  this->enableAckPayload();               // Allow optional ack payloads
-  this->setRetries(0, 15);                // Smallest time between retries, max no. of retries
+  // this->setAutoAck(1);                    // Ensure autoACK is enabled
+  // this->enableAckPayload();               // Allow optional ack payloads
+  //this->setRetries(0, 15);                // Smallest time between retries, max no. of retries
   //this->setPayloadSize(1);                // Here we are sending 1-byte payloads to test the call-response speed
-  this->startListening();                 // Start listening
+  // this->startListening();                 // Start listening
   this->printDetails();
+  this->setPALevel(RF24_PA_MAX);
 }
 
 void NrfKom::mengirim(String data) {
   this->openWritingPipe(this->_pipes[0]);
-  this->openReadingPipe(1, this->_pipes[1]);
+  this->openReadingPipe(0, this->_pipes[1]);
   this->stopListening();                                  // First, stop listening so we can talk.
-  char text[] = "haloo";
-  printf("Now sending %d as payload. ", this->counter);
-  byte gotByte;
-  unsigned long time = micros();                          // Take the time, and send it.  This will block until complete
+  char text[100] = "";
+  data.toCharArray(text, 100);
+  this->write(&text, sizeof(text));
+  //unsigned long time = micros();                          // Take the time, and send it.  This will block until complete
   //Called when STANDBY-I mode is engaged (User is finished sending)
-  if (!this->write(&text, sizeof(text))) {
-    Serial.println(F("failed."));
-  } else {
-    if (!this->available()) {
-      Serial.println(F("Blank Payload Received."));
-    } else {
-      while (this->available()) {
-        unsigned long tim = micros();
-        this->read(&gotByte, 1);
-        printf("Got response %d, round-trip delay: %lu microseconds\n\r", gotByte, tim - time);
-        this->counter++;
-      }
-    }
-  }
-  // Try again later
   delay(1000);
   // Try again later
   // delay();
+  Serial.println(text);
 }
 
 void NrfKom::menerima() {
 
   this->openWritingPipe(this->_pipes[1]);
-  this->openReadingPipe(1,  this->_pipes[0]);
+  this->openReadingPipe(0, this->_pipes[0]);
   this->startListening();
-  byte pipeNo;
-  char gotByte[32] = "";
-  byte text = 1; // Dump the payloads until we've gotten everything
-  while (this->available(&pipeNo)) {
-    this->read(&gotByte, sizeof(gotByte));
-    this->writeAckPayload(pipeNo, &text, 1);
-    Serial.print(gotByte);
-    Serial.print(F("Received message and replied at "));
-    Serial.println(millis());
+  if (this->available()) {
+    char text[100] = "";
+    this->read(&text, sizeof(text));
+    Serial.println(text);
   }
+}
+
+void NrfKom::pemisah(String data) {
+  String penampungData = data;
+  if (this->segment(dataObjek[4],data)==this->channel){
+     Serial.println(this->segment(dataObjek[4], data));
+  }
+ 
+
+}
+
+String NrfKom::segment(String objek, String data) {
+  String penampungData = data;
+  String hasil =
+    penampungData.substring(
+      penampungData.indexOf(":", penampungData.indexOf(objek) + 1) + 1,
+      penampungData.indexOf("/", penampungData.indexOf(objek) + 1)
+
+    );
+  return hasil;
 }
