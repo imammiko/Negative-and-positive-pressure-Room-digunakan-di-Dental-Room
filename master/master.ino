@@ -17,16 +17,24 @@ Adafruit_Sensor *bmp_pressure = bmp.getPressureSensor();
 //==================
 
 //======nrf=======
-RF24 radio(7,8);                // nRF24L01(+) radio attached using Getting Started board 
+RF24 radio(7, 8);               // nRF24L01(+) radio attached using Getting Started board
 
 RF24Network network(radio);      // Network uses that radio
-const uint16_t this_node = 00;    // Address of our node in Octal format ( 04,031, etc)
-const uint16_t nodeSensor = 01; // Address of the other node in Octal format
-const uint16_t nodeMotor=02;
+const uint16_t this_node = 00;    //** Address of our node in Octal format ( 04,031, etc)
+const uint16_t nodeSensor = 01; // **Address of the other node in Octal format
+const uint16_t nodeMotor = 02;//**
 
-struct data{
-  int pressureLuar;
-  int pressureDalam;
+
+struct waktu {
+  const unsigned long interval = 1000; //ms  // How often to send 'hello world to the other unit
+  unsigned long last_sent;             // When did we last send?
+  unsigned long packets_sent;
+};
+
+struct data {
+  unsigned int asal;//master0 nodeSensor1 noedMotor2
+  double pressureLuar;
+  double pressureDalam;
   short int nilaiP;
   short int nilaiI;
   short int nilaiD;
@@ -37,41 +45,24 @@ struct data{
 };
 
 //================
-
+data dataNodeMaster;//**
+waktu waktuNodeSensor;//**
+waktu waktuNodeMotor;//**
 void setup() {
   // put your setup code here, to run once:
-Serial.begin(9600);
+  Serial.begin(9600);
   Serial.println(F("master"));
- nrfConfig();
- bmpConfig();
+  nrfConfig();
+  bmpConfig();
+  dataNodeMaster.asal = this_node;
 }
 
 void loop() {
- //Serial.print( bmpPressure());
-//Serial.println();
-network.update();                  // Check the network regularly
+dataNodeMaster.pressureDalam=bmpPressure();
 
-  // ======reciving
-  while ( network.available() ) {     // Is there anything ready for us?
-    
-    RF24NetworkHeader header;        // If so, grab it and print it out
-    data dataTerima;
-    network.read(header,&dataTerima,sizeof(dataTerima));
-    Serial.print("1");
-    Serial.print("Received packet #");
-    Serial.print(dataTerima.pressureLuar);
-    Serial.print(" at ");
-    Serial.println(dataTerima.pressureDalam);
-  }
-//======
+menerimaData();
 
-//=======ngirim 
-    data dataKirim = {1 ,2,3,4,5,6,1,1,1};
-    RF24NetworkHeader header1(/*to node*/ nodeSensor);
-    bool ok = network.write(header1,&dataKirim,sizeof(dataKirim));
-     if (ok)
-      Serial.println("ok.");
-    else
-      Serial.println("failed.");
-//==========  
+//Serial.println(dataNodeMaster.pressureLuar);
+
+
 }

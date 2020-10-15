@@ -10,7 +10,7 @@
 #include <SPI.h>
 #include <nRF24L01.h>
 #include <RF24.h>
-
+int count=0;
 RF24 radio(7, 8); // CE, CSN
 
 const byte address[6] = "00001";
@@ -23,7 +23,9 @@ void setup() {
 }
 
 void loop() {
-  const char text[] = "Hello World";
+  const String text = "Hello World";
+  count+=1;
   radio.write(&text, sizeof(text));
-  delay(10);
+  Serial.print(text);
+  delay(1000);
 }

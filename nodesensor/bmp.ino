@@ -18,8 +18,8 @@ void bmpConfig(){
 double bmpPressure(){
    sensors_event_t pressure_event;
   bmp_pressure->getEvent(&pressure_event);
-
-  return pressure_event.pressure;
+  
+  return (pressure_event.pressure*100);
 
   
 }
