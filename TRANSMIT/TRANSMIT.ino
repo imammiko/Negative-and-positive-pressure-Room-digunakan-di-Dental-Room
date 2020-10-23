@@ -16,6 +16,7 @@ RF24 radio(7, 8); // CE, CSN
 const byte address[6] = "00001";
 
 void setup() {
+    Serial.begin(9600); 
   radio.begin();
   radio.openWritingPipe(address);
   radio.setPALevel(RF24_PA_MIN);
@@ -23,7 +24,7 @@ void setup() {
 }
 
 void loop() {
-  const String text = "Hello World";
+  const String text = "Hello World saya mau mencoba nilai dengan tipe data string semoga bisa di aplikasikan ke tempat lanin";
   count+=1;
   radio.write(&text, sizeof(text));
   Serial.print(text);
