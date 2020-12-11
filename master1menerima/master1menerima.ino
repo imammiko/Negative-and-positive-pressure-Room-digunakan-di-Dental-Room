@@ -44,10 +44,10 @@ void loop() {
  //nrfSensor.mengirim("test");
 
 //nrfSensor.pemisah(kataPublish);
-//nrfSensor.menerima();
+nrfSensor.menerima();
 
 
-String objek[]={"kp","ki","kd"} ;int nilaikObjek[]={1,2,3};nrfSensor.merakit("publish",objek, nilaikObjek,3);
+//String objek[]={"kp","ki","kd"} ;int nilaikObjek[]={1,2,3};nrfSensor.merakit("publish",objek, nilaikObjek,3);
 
 
 //int x=sizeof(nilaikObjek) / sizeof(nilaikObjek[0]);

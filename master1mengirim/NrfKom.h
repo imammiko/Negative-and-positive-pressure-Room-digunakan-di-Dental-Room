@@ -97,39 +97,39 @@ void NrfKom::merakit(String dataObjek, String objekNilai[], int nilai[], int ban
   //Serial.println(data);
 //==============================
   
-//  float jumlahDataDibagi = 0;
-//  
-//  String dataGotbyte = "";
-//
-//  jumlahDataDibagi = (float)data.length() / 26.0;
-//  jumlahDataDibagi = ceil(jumlahDataDibagi);
-//  randomKirim = random(10, 99);
-//  if (completeKirim == 1) {
-//    
-//    
-//    dataGotbyte = String(dataGotbyteKirim);
-//    for (int i = 0; i <= jumlahDataDibagi; i++) {
-//      if (dataGotbyte == "100" || completeKirim==1) {
-//        completeKirim = 0;
-//        i = 0;
-//        mengirim(dataGabungHeader(data, i, randomKirim));
-//      } else if (dataGotbyte.substring(0, 2) == "10") {
-//       i=(dataGotbyte.substring(2,3)).toInt();
-//       mengirim(dataGabungHeader(data, i, randomKirim));
-//      }else if (dataGotbyte.substring(0, 2) == "11") {
-//       i=(dataGotbyte.substring(2,3)).toInt();
-//       mengirim(dataGabungHeader(data, i, randomKirim));
-//      }
-//
-//
-//      
-//    }
-//    completeKirim = 1;
-//    dataGotbyteKirim = 0;
-//  }
+  float jumlahDataDibagi = 0;
+  
+  String dataGotbyte = "";
+
+  jumlahDataDibagi = (float)data.length() / 26.0;
+  jumlahDataDibagi = ceil(jumlahDataDibagi);
+  randomKirim = random(10, 99);
+  if (completeKirim == 1) {
+    
+    
+    dataGotbyte = String(dataGotbyteKirim);
+    for (int i = 0; i <= jumlahDataDibagi; i++) {
+      if (dataGotbyte == "100" || completeKirim==1) {
+        completeKirim = 0;
+        i = 0;
+        mengirim(dataGabungHeader(data, i, randomKirim));
+      } else if (dataGotbyte.substring(0, 2) == "10") {
+       i=(dataGotbyte.substring(2,3)).toInt();
+       mengirim(dataGabungHeader(data, i, randomKirim));
+      }else if (dataGotbyte.substring(0, 2) == "11") {
+       i=(dataGotbyte.substring(2,3)).toInt();
+       mengirim(dataGabungHeader(data, i, randomKirim));
+      }
+
+
+      
+    }
+    completeKirim = 1;
+    dataGotbyteKirim = 0;
+  }
 
   //===============================================================
- this->mengirim(dataGabungHeader(data, 2,85 ));
+// this->mengirim(dataGabungHeader(data, 0,85 ));
 //this->mengirim(data);
 }
 String NrfKom::dataGabungHeader(String data, int paketData, int randomData) {
@@ -158,7 +158,7 @@ void NrfKom::mengirim(String data) {
   pipeChange("transmitter");
   //
   //  printf("Now sending %d as payload. ", counter);
-  byte gotByte;
+  byte gotByte=0;
   char text[32] = "";
   Data.toCharArray(text, 32);
   //  Serial.println(text);
@@ -170,11 +170,15 @@ void NrfKom::mengirim(String data) {
     if (! available()) {
       Serial.println(F("Blank Payload Received."));
     } else {
-      while (available()) {
+      while (isAckPayloadAvailable()) {
+        gotByte=0;
         unsigned long tim = micros();
         read(&gotByte, 1);
-        printf("Got response %d, round-trip delay: %lu microseconds\n\r", gotByte, tim - time);
         dataGotbyteKirim = gotByte;
+         
+        Serial.println(gotByte);
+       // printf("Got response %d, round-trip delay: %lu microseconds\n\r", gotByte, tim - time);
+        
         counter++;
       }
     }

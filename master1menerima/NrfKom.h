@@ -32,10 +32,10 @@ class NrfKom: public RF24 {
     int packetValue = 0;//data yang packet diterima value sebelumnya
     byte complete = 1;// status complete data
     String dataKumpul = "";//mengumpulkan data
-  String dataObjek[5] = {"/rd:", "/md:", "/dt:", "/sl:", "/chnl:"};
+    String dataObjek[5] = {"/rd:", "/md:", "/dt:", "/sl:", "/chnl:"};
 
   private:
-  
+
 };
 
 
@@ -56,7 +56,8 @@ void NrfKom::deklarasi() {
   begin();
   setAutoAck(1);                    // Ensure autoACK is enabled
   enableAckPayload();               // Allow optional ack payloads
-  enableDynamicPayloads();
+ //  enableDynamicPayloads();
+setRetries(0, 15);  
 
   startListening();                 // Start listening
   printDetails();
@@ -95,42 +96,42 @@ void NrfKom::merakit(String dataObjek, String objekNilai[], int nilai[], int ban
   }
   // int x=sizeof(objekNilai) / sizeof(*objekNilai);
   //Serial.println(data);
-//==============================
-  
-//  float jumlahDataDibagi = 0;
-//  
-//  String dataGotbyte = "";
-//
-//  jumlahDataDibagi = (float)data.length() / 26.0;
-//  jumlahDataDibagi = ceil(jumlahDataDibagi);
-//  randomKirim = random(10, 99);
-//  if (completeKirim == 1) {
-//    
-//    
-//    dataGotbyte = String(dataGotbyteKirim);
-//    for (int i = 0; i <= jumlahDataDibagi; i++) {
-//      if (dataGotbyte == "100" || completeKirim==1) {
-//        completeKirim = 0;
-//        i = 0;
-//        mengirim(dataGabungHeader(data, i, randomKirim));
-//      } else if (dataGotbyte.substring(0, 2) == "10") {
-//       i=(dataGotbyte.substring(2,3)).toInt();
-//       mengirim(dataGabungHeader(data, i, randomKirim));
-//      }else if (dataGotbyte.substring(0, 2) == "11") {
-//       i=(dataGotbyte.substring(2,3)).toInt();
-//       mengirim(dataGabungHeader(data, i, randomKirim));
-//      }
-//
-//
-//      
-//    }
-//    completeKirim = 1;
-//    dataGotbyteKirim = 0;
-//  }
+  //==============================
+
+  float jumlahDataDibagi = 0;
+
+  String dataGotbyte = "";
+
+  jumlahDataDibagi = (float)data.length() / 26.0;
+  jumlahDataDibagi = ceil(jumlahDataDibagi);
+  randomKirim = random(10, 99);
+  if (completeKirim == 1) {
+
+
+    dataGotbyte = String(dataGotbyteKirim);
+    for (int i = 0; i <= jumlahDataDibagi; i++) {
+      if (dataGotbyte == "100" || completeKirim == 1) {
+        completeKirim = 0;
+        i = 0;
+        mengirim(dataGabungHeader(data, i, randomKirim));
+      } else if (dataGotbyte.substring(0, 2) == "10") {
+        i = (dataGotbyte.substring(2, 3)).toInt();
+        mengirim(dataGabungHeader(data, i, randomKirim));
+      } else if (dataGotbyte.substring(0, 2) == "11") {
+        i = (dataGotbyte.substring(2, 3)).toInt();
+        mengirim(dataGabungHeader(data, i, randomKirim));
+      }
+
+
+
+    }
+    completeKirim = 1;
+    dataGotbyteKirim = 0;
+  }
 
   //===============================================================
- this->mengirim(dataGabungHeader(data, 2,85 ));
-//this->mengirim(data);
+  // this->mengirim(dataGabungHeader(data, 0,85 ));
+  //this->mengirim(data);
 }
 String NrfKom::dataGabungHeader(String data, int paketData, int randomData) {
   String Data = data;
@@ -200,7 +201,6 @@ void NrfKom::menerima() {
     if (terima.indexOf("!") > -1) {
       header = terima.substring(0, terima.indexOf("!") + 1);
     } else {
-      text=0;
       text = 210;
       writeAckPayload(pipeNo, &text, 1);
     }
@@ -209,29 +209,30 @@ void NrfKom::menerima() {
       PString = header.substring(header.indexOf("P") + 1, header.indexOf("!"));
       P = PString.toInt();
       R = RString.toInt();
-
+      text =  P;// sudah masuk dengan baik
+      text =  P;
+      Serial.println(text);
+      writeAckPayload(pipeNo, &P, 1);
 
       //======================pertama
-      if (complete == 1 && P == 0) {
-        randomValue = R;
-        text=0;
-        text =  0;// sudah masuk dengan baik
-        writeAckPayload(pipeNo, &text, 1);
-        complete = 0;
-        //ambil data
-        dataKumpul += terima.substring(header.indexOf("!") + 1);
-        if (terima.indexOf(">") > -1) {
-          complete = 1;// data sudah komplit
-          packetValue = 0;
-        }
-        packetValue += 1;
-        //==
-      } else if (complete == 1 && P > 0) {
-        text=0;
-        text = 100;//random benar data berlebihan satu
-        writeAckPayload(pipeNo, &text, 1);
-      }
-      //**************************pertama
+      //      if (complete == 1 && P == 0) {
+      //        randomValue = R;
+      //        text =  0;// sudah masuk dengan baik
+      //        writeAckPayload(pipeNo, &text, 1);
+      //        complete = 0;
+      //        //ambil data
+      //        dataKumpul += terima.substring(header.indexOf("!") + 1);
+      //        if (terima.indexOf(">") > -1) {
+      //          complete = 1;// data sudah komplit
+      //          packetValue = 0;
+      //        }
+      //        packetValue += 1;
+      //==
+      //      } else if (complete == 1 && P > 0) {
+      //        text = 100;//random benar data berlebihan satu
+      //        writeAckPayload(pipeNo, &text, 1);
+      //      }
+      //      //**************************pertama
 
       //============data dikirim double========
 
@@ -240,42 +241,40 @@ void NrfKom::menerima() {
       //*****************double*****************
 
       //==========================kedua
-      if (complete == 0 && randomValue == R ) {//check paket ini lanjutan data
-        if (packetValue == P) {
-          packetValue += 1;//count p ditambah
-          dataKumpul += terima.substring(header.indexOf("!") + 1);
-          if (terima.indexOf(">") > -1) {
-            complete = 1;
-            packetValue = 0;
-          }
-          text = 0;//random benar data berlebihan satu
-          writeAckPayload(pipeNo, &text, 1);
-        } else if (packetValue != P) {// p tidak sama yang diminta
-          Serial.print("tidak ada sama:");
-          if (packetValue < P) {
-            Serial.println(packetValue);
-            text=0;
-            text = 100 + packetValue; //random benar data berlebihan satu
-            writeAckPayload(pipeNo, &text, 1);
-          } else {
-            Serial.println(packetValue);
-            text=0;
-            text = 110 + packetValue; //random benar data kurang satu
-            writeAckPayload(pipeNo, &text, 1);
-          }
-
-        }
-
-      } if (randomValue != R) {
-        complete = 1;
-        dataKumpul = "";
-      }
+      //      if (complete == 0 && randomValue == R ) {//check paket ini lanjutan data
+      //        if (packetValue == P) {
+      //          packetValue += 1;//count p ditambah
+      //          dataKumpul += terima.substring(header.indexOf("!") + 1);
+      //          if (terima.indexOf(">") > -1) {
+      //            complete = 1;
+      //            packetValue = 0;
+      //          }
+      //          text = 0;//random benar data berlebihan satu
+      //          writeAckPayload(pipeNo, &text, 1);
+      //        } else if (packetValue != P) {// p tidak sama yang diminta
+      //          Serial.print("tidak ada sama:");
+      //          if (packetValue < P) {
+      //            Serial.println(packetValue);
+      //            text = 100 + packetValue; //random benar data berlebihan satu
+      //            writeAckPayload(pipeNo, &text, 1);
+      //          } else {
+      //            Serial.println(packetValue);
+      //            text = 110 + packetValue; //random benar data kurang satu
+      //            writeAckPayload(pipeNo, &text, 1);
+      //          }
+      //
+      //        }
+      //
+      //      } if (randomValue != R) {
+      //        complete = 1;
+      //        dataKumpul = "";
+      //      }
 
 
 
       //********************kedua
 
-     // Serial.println(dataKumpul);
+      // Serial.println(dataKumpul);
     } else {// data tidak di ketahui
 
       text = 210;
