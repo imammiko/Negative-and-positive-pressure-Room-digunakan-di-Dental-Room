@@ -21,11 +21,14 @@ void nodeMasterF() {
 
   tampilanLcd(tampilan.peek());
 
-  if (data.statusHidup && statusHidupManual == 0) {
-    //  Serial.println(pid());
+  if (data.statusHidup && !statusHidupManual) {
+    Serial.print("pid: ");
+      Serial.println(pid());
+    
     motorAcRun(pid());
-  } else if (!data.statusHidup && statusHidupManual == 1) {
-    motorAcRun(100);
+  } else if (!data.statusHidup && statusHidupManual) {
+   
+    motorAcRun(data.speedMotorManualS);
   }
   //  lcd.setCursor(0, 0); lcd.print("luar:");// menampilkan trace
   //  lcd.setCursor(7, 0); lcd.print(data.pressureLuar);//
@@ -45,8 +48,10 @@ int pid() {
 
 void motorAcRun(int persen) {
   persen = constrain(persen, data.minMotor, data.maxMotor);
-  int pwm = (persen / 100.0) * 255;
+  int pwm = (persen / 100.0) * 65535;
   analogWrite(PA2, pwm);
+  Serial.print(pwm);
+  Serial.print("persen: ");
   Serial.println(persen);
 }
 
@@ -141,6 +146,10 @@ void cekKoneksi() {
   if (millis() - a1.last > 25000 ) {
     data.statusHidup = 0;
   }
+  if(data.dp>100||data.dp<-100){
+    data.statusHidup = 0;
+    }
+  
 }
 
 void start() {
@@ -160,6 +169,21 @@ void start() {
 void stop() {
 
   data.statusHidup = 0;
+
+
+}
+
+void startManual() {
+
+
+  statusHidupManual = 1;
+
+
+}
+
+void stopManual() {
+
+  statusHidupManual = 0;
 
 
 }

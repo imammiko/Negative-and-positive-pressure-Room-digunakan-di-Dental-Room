@@ -139,6 +139,137 @@ void menuLcd() {
   } else {
     lcdStatusStartStop = "STOP";
   }
+  if (statusHidupManual == 0) {
+    lcdStatusStartStopManual = "START Manual";
+  } else {
+    lcdStatusStartStopManual = "STOP Manual";
+  }
+
+
+  if ( (position < encoder.getPosition()) || ((millis() - a0.last > 300) && irInput(0) == irIn.bawah) ) { // button down left
+    position = encoder.getPosition();
+    countLcd = 0;
+    a0.last = millis();
+    irmp_data.command = 0;
+    if (++home.menu > 5) home.menu = 1;// menu akan naik jika lebih dari 4 counter akan kembali ke 1
+    Serial.println("atas");
+  }
+
+
+  if (position > encoder.getPosition() || ((millis() - a0.last > 300) && irInput(0) == irIn.atas)) {
+    position = encoder.getPosition();
+    countLcd = 0;
+    a0.last = millis();
+    irmp_data.command = 0;
+    if (--home.menu < 1) home.menu = 5;// menu akan naik jika lebih kurang dari 1 maka counter akan kembali ke 4
+    Serial.println("BAWAH");
+  }
+  //menu = constrain(menu, 1, 4);
+  if (countLcd == 0) {
+    lcd.clear();
+    countLcd = 1;
+  }
+  switch (home.menu) { // switch menu
+
+    case 1:
+      lcd.setCursor(0, 0); lcd.write(byte(0));
+      lcd.setCursor(1, 0); lcd.print(lcdStatusStartStop);
+      lcd.setCursor(1, 1); lcd.print(lcdStatusStartStopManual);
+
+      readB();
+      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
+        afterEnter(1);
+        if (!statusHidupManual && !data.statusHidup) {
+          start();
+        } else if (!statusHidupManual && data.statusHidup) {
+          stop();
+        }
+      }
+      break;
+    case 2:
+      lcd.setCursor(0, 1); lcd.write(byte(0));
+      lcd.setCursor(1, 0); lcd.print(lcdStatusStartStop);
+      lcd.setCursor(1, 1); lcd.print(lcdStatusStartStopManual);
+      //      lcd.setCursor(1, 1); lcd.print("SET  ");
+      readB();
+      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
+        afterEnter(1);
+        if (!statusHidupManual && !data.statusHidup) {
+          startManual();
+        } else if (statusHidupManual && !data.statusHidup) {
+          stopManual();
+        }
+      }
+      //      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
+      //        afterEnter(1);
+      //        setNilaiDp();
+      //
+      //        EEPROM.put(addressEE, save);
+      //        exit();
+      //      }
+
+
+
+      break;
+    case 3:
+      lcd.setCursor(0, 0); lcd.write(byte(0));
+      lcd.setCursor(1, 0); lcd.print("SET  ");
+      lcd.setCursor(1, 1); lcd.print("SETTING");
+      //      lcd.setCursor(0, 1); lcd.print(" EXIT       ");
+      //      if (button == tekan && millis() - a5.last > 200) {
+      //        tampilan.push(2);
+      //        // exit();
+      //        countLcd = 0;
+      //        a5.last = millis();
+      //        menuCounti.menu = 1;
+      //      }
+      readB();
+      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
+        afterEnter(1);
+        setNilaiDp();
+
+        EEPROM.put(addressEE, save);
+        exit();
+      }
+
+      //      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
+      //        afterEnter();
+      //        tampilan.push(2);
+      //      }
+
+      break;
+    case 4:
+      lcd.setCursor(0, 1); lcd.write(byte(0));
+      lcd.setCursor(1, 0); lcd.print("SET  ");
+      lcd.setCursor(1, 1); lcd.print("SETTING");
+      //      lcd.setCursor(1, 1); lcd.print("EXIT         ");
+      readB();
+
+      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
+        afterEnter();
+        tampilan.push(2);
+      }
+      //      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
+      //        afterEnter();
+      //        exit();
+      //      }
+
+      break;
+    case 5:
+      lcd.setCursor(0, 0); lcd.write(byte(0));
+      lcd.setCursor(1, 0); lcd.print("EXIT  ");
+      readB();
+      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
+        afterEnter();
+        exit();
+      }
+      break;
+  }
+}
+
+
+void settingLcd() {
+
 
   if ( (position < encoder.getPosition()) || ((millis() - a0.last > 300) && irInput(0) == irIn.bawah) ) { // button down left
     position = encoder.getPosition();
@@ -156,98 +287,6 @@ void menuLcd() {
     a0.last = millis();
     irmp_data.command = 0;
     if (--home.menu < 1) home.menu = 4;// menu akan naik jika lebih kurang dari 1 maka counter akan kembali ke 4
-    Serial.println("BAWAH");
-  }
-  //menu = constrain(menu, 1, 4);
-  if (countLcd == 0) {
-    lcd.clear();
-    countLcd = 1;
-  }
-  switch (home.menu) { // switch menu
-
-    case 1:
-      lcd.setCursor(0, 0); lcd.write(byte(0));
-      lcd.setCursor(1, 0); lcd.print(lcdStatusStartStop);
-      lcd.setCursor(1, 0); lcd.print(lcdStatusStartStop);
-      lcd.setCursor(0, 1); lcd.print(" SET  ");
-      readB();
-      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
-        afterEnter(1);
-        if (data.statusHidup == 0) {
-          start();
-        } else {
-          stop(); 
-        }
-      }
-      break;
-    case 2:
-      lcd.setCursor(0, 1); lcd.write(byte(0));
-      lcd.setCursor(1, 0); lcd.print(lcdStatusStartStop);
-      lcd.setCursor(1, 1); lcd.print("SET  ");
-      readB();
-      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
-        afterEnter(1);
-        setNilaiDp();
-        EEPROM.put(addressEE, save);
-        exit();
-      }
-
-
-
-      break;
-    case 3:
-      lcd.setCursor(0, 0); lcd.write(byte(0));
-      lcd.setCursor(1, 0); lcd.print("SETTING");
-      lcd.setCursor(0, 1); lcd.print(" EXIT       ");
-      //      if (button == tekan && millis() - a5.last > 200) {
-      //        tampilan.push(2);
-      //        // exit();
-      //        countLcd = 0;
-      //        a5.last = millis();
-      //        menuCounti.menu = 1;
-      //      }
-      readB();
-      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
-        afterEnter();
-        tampilan.push(2);
-      }
-
-      break;
-    case 4:
-      lcd.setCursor(0, 1); lcd.write(byte(0));
-      lcd.setCursor(0, 0); lcd.print(" SETTING");
-      lcd.setCursor(1, 1); lcd.print("EXIT         ");
-      readB();
-      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
-        afterEnter();
-        exit();
-      }
-
-      break;
-
-  }
-}
-
-
-void settingLcd() {
-
-
-  if ( (position < encoder.getPosition()) || ((millis() - a0.last > 300) && irInput(0) == irIn.bawah) ) { // button down left
-    position = encoder.getPosition();
-    countLcd = 0;
-    a0.last = millis();
-    irmp_data.command = 0;
-    if (++home.menu > 3) home.menu = 1;// menu akan naik jika lebih dari 4 counter akan kembali ke 1
-    Serial.println("atas");
-  }
-
-
-  if (position > encoder.getPosition() || ((millis() - a0.last > 300) && irInput(0) == irIn.atas)) {
-    position = encoder.getPosition();
-    countLcd = 0;
-    a0.last = millis();
-    irmp_data.command = 0;
-    if (--home.menu < 1) home.menu = 3;// menu akan naik jika lebih kurang dari 1 maka counter akan kembali ke 4
     Serial.println("BAWAH");
   }
 
@@ -295,14 +334,67 @@ void settingLcd() {
 
     case 3:
       lcd.setCursor(0, 0); lcd.write(byte(0));
-      lcd.setCursor(1, 0); lcd.print("EXIT ");
+      char buffSpeedManual[10];
+      sprintf(buffSpeedManual, "KEC. MAN.  %3d", data.speedMotorManualS);
+      lcd.setCursor(1, 0); lcd.print(buffSpeedManual);
+      lcd.setCursor(1, 1); lcd.print("EXIT  ");
+
+      readB();
+      if (sudahDiTekan == 0) {
+        if (countB == 1 || ((millis() - a0.last > 500) && irInput(0) == irIn.tengah))  {
+          afterEnter(1);
+          sudahDiTekan = 1;
+          irmp_data.command = 0;
+          Serial.println("tengah1");
+        }
+      }
+      if (sudahDiTekan == 1) {
+
+        if ( (position < encoder.getPosition()) || ((millis() - a0.last > 300) && irInput(1) == irIn.bawah)) { // button down left
+          position = encoder.getPosition();
+          countLcd = 0;
+          a0.last = millis();
+          irmp_data.command = 0;
+          if (++data.speedMotorManualS > 100) data.speedMotorManualS = 1;
+          Serial.println("bawah");
+        }
+        if ( (position > encoder.getPosition()) || ((millis() - a0.last > 300) && irInput(1) == irIn.atas)) { // button down left
+          position = encoder.getPosition();
+          countLcd = 0;
+          a0.last = millis();
+          irmp_data.command = 0;
+          if (--data.speedMotorManualS < 1) data.speedMotorManualS = 100;
+          Serial.println("atas");
+        }
+        readB();
+        if (countB == 1 || ((millis() - a0.last > 500) && irInput(1) == irIn.tengah))  {
+          afterEnter(1);
+          sudahDiTekan = 0;
+          save.speedMotorManualS = data.speedMotorManualS;
+          EEPROM.put(addressEE, save);
+          Serial.println("tengah");
+        }
+
+
+      }
+
+      //      readB();
+      //      if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
+      //        afterEnter();
+      //        exit();
+      //      }
+      break;
+    case 4:
+      lcd.setCursor(0, 1); lcd.write(byte(0));
+      sprintf(buffSpeedManual, "KEC. MAN.  %3d", data.speedMotorManualS);
+      lcd.setCursor(1, 0); lcd.print(buffSpeedManual);
+      lcd.setCursor(1, 1); lcd.print("EXIT  ");
       readB();
       if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
-        afterEnter();
+        afterEnter(0);
         exit();
       }
       break;
-
   }
 }
 
@@ -439,7 +531,7 @@ void settingMotorLcd() {
       lcd.setCursor(1, 0); lcd.print("EXIT ");
       readB();
       if (countB == 1 || ((millis() - a0.last > 300) && irInput(0) == irIn.tengah))  {
-        afterEnter();
+        afterEnter(0);
         exit();
       }
       break;
@@ -644,7 +736,7 @@ void tampilanPid() {
           countLcd = 0;
           a0.last = millis();
           irmp_data.command = 0;
-          if (++data.setPoint > 100) data.setPoint = 1;
+          if (++data.setPoint > 100) data.setPoint = -100;
           Serial.println("bawah");
         }
         if ( (position > encoder.getPosition()) || ((millis() - a0.last > 300) && irInput(1) == irIn.atas)) { // button down left
@@ -652,7 +744,7 @@ void tampilanPid() {
           countLcd = 0;
           a0.last = millis();
           irmp_data.command = 0;
-          if (--data.setPoint < 1) data.setPoint = 100;
+          if (--data.setPoint < -100) data.setPoint = 100;
           Serial.println("atas");
         }
         readB();
