@@ -1,15 +1,16 @@
-#include <Buzzer.h>
 
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <EEPROM.h>
 int addressEE = 0;
+int addressEER = 0;
 #include <Adafruit_BMP280.h>
 //===============nrf=======
 #include <RF24Network.h>
 #include <RF24.h>
 #include <SPI.h>
-
+#include <DWEasyFlipFlop.h>
+DWEasyFlipFlop myFlipFlop;
 #include "Stack.h"
 
 //===============remote=====
@@ -57,11 +58,14 @@ int16_t position = 0;
 RotaryEncoder encoder(PIN_A, PIN_B, 0);
 //=================================
 //===============nrf=================
+
 RF24 radio(PA4, PA3);
 RF24Network network(radio);
 const uint16_t nodeKendali = 00;    //** Address of our node in Octal format ( 04,031, etc)
 const uint16_t nodeSensor = 01;
 //====================================
+
+
 
 
 //=====bmp==========//
@@ -102,7 +106,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2); // set the LCD address to 0x27 for a 16 char
 struct motorAc {
   int minMotor, maxMotor;
   int setPoint, dp, dpSet, setS;
-  unsigned int kp, kd;
+  float kp, kd, ki;
   double pressureLuar;
   double pressureDalam;
   bool statusHidup = 0;
@@ -115,17 +119,27 @@ struct komSensor {
 struct motorAcEepfrom {
   int minMotor, maxMotor;
   int setS, setPoint;
-  int kp, kd;
+  float kp, kd, ki;
   int speedMotorManualS;
+  float lKp;
+  float mKp;
+  float hKp;
 };
 
 komSensor senLuar;
 motorAc data;
 motorAcEepfrom save;//EEprom
 // EEprom
+//================b;uzzer==========
+#define buzzer PA10
+bool buzzerS = 0;
+long intervalDiscon = 1500;
+long interval = 50;
 struct waktu {
   unsigned long last;
-} a0,a1;
+} a0, a1, a2;
+int countBa = 0;
+
 
 struct statusNode {
   boolean statusConnect = 0;
@@ -134,6 +148,11 @@ struct statusNode {
 } sensor;
 
 struct irRemote {
+  byte lowKp = 69;
+  byte mediumKp = 70;
+  byte highKp = 71;
+  byte startR = 22;
+  byte setR = 13;
   byte atas = 24;
   byte bawah = 82;
   byte kiri = 8;
@@ -141,14 +160,29 @@ struct irRemote {
   byte tengah = 28;
 } irIn;
 
+//struct irRemote {
+//  byte lowKp ;
+//  byte mediumKp ;
+//  byte highKp ;
+//  byte startR ;
+//  byte setR ;
+//  byte atas ;
+//  byte bawah ;
+//  byte kiri ;
+//  byte kanan ;
+//  byte tengah ;
+//} irIn;
+
 bool sudahDiTekan = 0;
-int kesalahanLalu = 0;
+float kesalahanLalu = 0;
 int lastDpSet = 0;
 bool statusHidupManual = 0;
 
 String lcdStatusStartStop = "";
 String lcdStatusStartStopManual = "";
-
+float kesalahan = 0;
+float derivatifKesalahan = 0;
+float integralKesalahan = 0;
 //menuCounti.menu=4;
 //=============mengubah node==========
 
@@ -165,14 +199,18 @@ void setup() {
   lcd.backlight();
   lcd.clear();
   bmpConfig();
+  pinMode(PB5, INPUT_PULLUP);
   pinMode(PA2, OUTPUT);
   lcd.createChar(0, kursor);//membuat karakter bayte
   lcd.createChar(1, kursor1);// memb
-  pinMode(PB5, INPUT_PULLUP);
+  addressEER += addressEE + (20 + sizeof(irIn));
   SPI.begin();
   radio.begin();
   network.begin(/*channel*/ 90, /*node address*/ nodeKendali);
   encoderConfig();
+  analogWrite(PA2, 0);
+  // motorAcRun(0);
+
   //readB();
   //
   if (digitalRead(BUTTON) == 0) {
@@ -190,12 +228,13 @@ void setup() {
     //  int kp, kd;
     //  int speedMotorManualS;
     save.minMotor = 0;
-    save.maxMotor = 0;
+    save.maxMotor = 100;
     save.setS = 0;
-    save.setPoint = 0;
-    save.kp = 0;
+    save.setPoint = -10;
+    save.kp = 3;
     save.kd = 0;
-    save.speedMotorManualS = 0;
+    save.ki = 1;
+    save.speedMotorManualS = 50;
 
     EEPROM.put(addressEE, save);
     //    save.minMotor = 0;
@@ -215,21 +254,31 @@ void setup() {
   delay(1000);
   lcd.clear();
   EEPROM.get( addressEE, save );
+  addressEER += addressEE + (20 + sizeof(save));
+  EEPROM.get( addressEER, irIn );
   data.minMotor = save.minMotor;
   data.maxMotor = save.maxMotor;
   data.setS = save.setS;
   data.setPoint = save.setPoint;
   data.kp = save.kp;
   data.kd = save.kd;
+  data.ki = save.ki;
   data.speedMotorManualS = save.speedMotorManualS;
+
   tampilan.push(0);
   radio.setPALevel(RF24_PA_MAX);
   Serial.println("setup");
+  pinMode(buzzer, OUTPUT);
+  buzzerFlipFlopConf();
 }
 
 void loop() {
+  buzzerF();
   // put your main code here, to run repeatedly:
   nodeMasterF();
+
+  // Serial.println(sizeof(irIn));
+  //motorAcRun(50 );
 
   // Serial.println(readB());
 }

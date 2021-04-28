@@ -1,11 +1,34 @@
 
 
 
+void buzzerF() {
+
+  unsigned long currentMillis = millis();
+  if (countBa == 0) {
+    if (currentMillis - a2.last >= interval) {
+      // save the last time you blinked the LED
+      a2.last = currentMillis;
+
+      // if the LED is off turn it on and vice-versa:
+      if (buzzerS == LOW) {
+        buzzerS = HIGH;
+      } else {
+        buzzerS = LOW;
+        countBa = 1;
+      }
+
+
+      // set the LED with the ledState of the variable:
+      digitalWrite(buzzer, buzzerS);
+    }
+  }
+}
+
+
 void nodeMasterF() {
   //motor.pressureDalam = bmpPressure();
 
-
-
+  //buzzerF();
 
 
   //Serial.println(data.pressureDalam);
@@ -18,18 +41,25 @@ void nodeMasterF() {
   }
   //Serial.println(encoderInput());
   cekKoneksi();
+  langsungIr();
 
-  tampilanLcd(tampilan.peek());
 
   if (data.statusHidup && !statusHidupManual) {
     Serial.print("pid: ");
-      Serial.println(pid());
-    
+    Serial.println(pid());
+
     motorAcRun(pid());
   } else if (!data.statusHidup && statusHidupManual) {
-   
+
     motorAcRun(data.speedMotorManualS);
+  } else if (!data.statusHidup && !statusHidupManual) {
+    analogWrite(PA2, 0);
+
   }
+
+  tampilanLcd(tampilan.peek());
+
+
   //  lcd.setCursor(0, 0); lcd.print("luar:");// menampilkan trace
   //  lcd.setCursor(7, 0); lcd.print(data.pressureLuar);//
   //  lcd.setCursor(0, 1); lcd.print("Dalam:");// menampilkan trace
@@ -39,16 +69,27 @@ void nodeMasterF() {
 
 
 int pid() {
-  int kesalahan = data.dpSet - data.setPoint;
-  int derivatifKesalahan = kesalahan - kesalahanLalu;
+  kesalahan = data.dpSet - data.setPoint;
+  derivatifKesalahan = kesalahan - kesalahanLalu;
+  integralKesalahan +=  kesalahan;
   kesalahanLalu = kesalahan;
+//  if(data.dpSet<(data.setPoint-1)){
+//    integralKesalahan=0;
+//    }
 
-  return (data.kp * kesalahan) + (data.kd * derivatifKesalahan);
+
+  return (data.kp * kesalahan) + (data.kd * derivatifKesalahan) + (data.ki * integralKesalahan);
 }
 
 void motorAcRun(int persen) {
   persen = constrain(persen, data.minMotor, data.maxMotor);
-  int pwm = (persen / 100.0) * 65535;
+  float pwm = 0;
+  if (persen != 0) {
+    pwm = (persen / 100.0) * 255;
+  } else {
+    pwm = 0;
+  }
+
   analogWrite(PA2, pwm);
   Serial.print(pwm);
   Serial.print("persen: ");
@@ -85,6 +126,8 @@ void irConfig() {
 
 }
 
+
+
 byte irInput(bool status = 0) {
 
 
@@ -99,13 +142,14 @@ byte irInput(bool status = 0) {
     */
     if (status == 0) {
       if (!(irmp_data.flags & IRMP_FLAG_REPETITION)) {
+
         return irmp_data.command;
       }
       return irmp_data.command = 0;
 
 
       // irmp_result_print(&irmp_data);
-    } else {
+    } else if (status == 1) {
       //
       if ((irmp_data.flags & IRMP_FLAG_REPETITION)) {
         return irmp_data.command;
@@ -114,6 +158,11 @@ byte irInput(bool status = 0) {
 
 
       // irmp_result_print(&irmp_data);
+    } else if (status == 2) {
+      if ((irmp_data.flags & IRMP_FLAG_REPETITION)) {
+        return irmp_data.command;
+      }
+
     }
   }
 
@@ -129,7 +178,7 @@ void afterEnter(byte status = 0) {
   irmp_data.command = 0;
   countB = 0;
   a0.last = millis();
-
+  countBa = 0;
   countLcd = 0;
   if (status == 0) {
     home.menu = 1;
@@ -139,6 +188,65 @@ void afterEnter(byte status = 0) {
   Serial.print("123");
 }
 
+void langsungIr() {
+  //  Serial.println("masuk");
+  if (((millis() - a0.last > 300)))  {
+    //Serial.println("satu");
+    if (irInput(0) == irIn.lowKp) {
+      save.kp = save.lKp;
+      data.kp = save.kp;
+      EEPROM.put(addressEE, save);
+    } else if (irInput(0) == irIn.mediumKp) {
+      save.kp = save.mKp;
+      data.kp = save.kp;
+      EEPROM.put(addressEE, save);
+    } else if (irInput(0) == irIn.highKp) {
+      save.kp = save.hKp;
+      data.kp = save.kp;
+      EEPROM.put(addressEE, save);
+    } else if (irInput(0) == irIn.startR) {
+      if (!statusHidupManual && !data.statusHidup) {
+        start();
+      } else if (!statusHidupManual && data.statusHidup) {
+        stop();
+      }
+
+    } else if (irInput(0) == irIn.setR) {
+      setNilaiDp();
+    }
+  }
+}
+void buzzerFlipFlopConf() {
+
+
+
+  // Set Flip cycle time in millisecondes
+  myFlipFlop.setFlipDelay(2000);
+  // Set Flip call back function (the function will be called after desigred ms delay)
+  myFlipFlop.setFlipHandler(flip);
+
+  // Set Flop cycle time in millisecondes
+  myFlipFlop.setFlopDelay(1000 * 60);
+  // Set Flop call back function (the function will be called after desigred ms delay)
+  myFlipFlop.setFlopHandler(flop);
+  // Start flip flop
+  myFlipFlop.start();
+}
+void flip()
+{
+  // Any action desigred should be put in this function
+  // In this examle led green turn on and red turn off
+  digitalWrite(PA10, HIGH);
+
+}
+void flop()
+{
+  // Any action desigred should be put in this function
+  // In this examle led green turn off and red turn on
+  digitalWrite(PA10, LOW);
+
+}
+
 void cekKoneksi() {
   if (millis() - a1.last > 5000 ) {
     sensor.statusConnect = 0;
@@ -146,10 +254,14 @@ void cekKoneksi() {
   if (millis() - a1.last > 25000 ) {
     data.statusHidup = 0;
   }
-  if(data.dp>100||data.dp<-100){
+  if (data.dp > 100 || data.dp < -100) {
     data.statusHidup = 0;
-    }
-  
+  }
+  if (sensor.statusConnect == 0 && statusHidupManual == 0) {
+    myFlipFlop.loop();
+  }
+
+
 }
 
 void start() {
